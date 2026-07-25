@@ -24,7 +24,7 @@ def test_take_index_out_of_bounds_high(console):
     args = SimpleNamespace(number=2)  # Index 2 for 1 problem is out of bounds
     take.handle(args=args, console=console)
     output = console.export_text()
-    assert output == ""
+    assert output == "Invalid problem number: 2\n"
 
 
 def test_take_index_zero_is_invalid(console):
@@ -75,7 +75,7 @@ def test_take_print_problem_from_due_problem_without_url(console, backdate_probl
     assert "Open in Browser" not in output
 
 
-def test_take_prints_none_with_url_flag_but_no_url(console, backdate_problem):
+def test_take_reports_missing_url(console, backdate_problem):
     problem = "Problem Without URL"
     add_args = SimpleNamespace(name=problem, rating=4)
     add.handle(add_args, console)
@@ -87,7 +87,7 @@ def test_take_prints_none_with_url_flag_but_no_url(console, backdate_problem):
     take_args = SimpleNamespace(number=1, action=None, rating=None, url=True)
     take.handle(args=take_args, console=console)
     output = console.export_text()
-    assert not output
+    assert output == "No URL found for 'Problem Without URL'.\n"
 
 
 def test_take_print_url_from_nextup_problem(console):

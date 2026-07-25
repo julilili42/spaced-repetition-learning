@@ -1,5 +1,5 @@
 from rich.console import Console
-from srl.commands import list_
+from srl.commands.list_ import get_due_problems
 import argparse
 
 
@@ -35,17 +35,16 @@ def handle(args, console: Console):
     index: int = args.number
     if index <= 0:
         return
-    problem = None
-    url = None
-    due_problems = list_.get_due_problems()
+    due_problems = get_due_problems()
 
-    if due_problems and 0 < index <= len(due_problems):
-        problem, url = due_problems[index - 1]
-
-    if not problem:
+    if index > len(due_problems):
+        console.print(f"[red]Invalid problem number:[/red] {index}")
         return
 
+    problem, url = due_problems[index - 1]
+
     if url_requested and not url:
+        console.print(f"[red]No URL found for '{problem}'.[/red]")
         return
 
     if url_requested:

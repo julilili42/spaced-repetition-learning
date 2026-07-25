@@ -1,8 +1,9 @@
-from rich.console import Console
 from collections import Counter
 from pathlib import Path
 from datetime import date, timedelta
+from typing import TypeAlias
 from rich.table import Table
+from rich.console import Console
 from srl.storage import (
     load_json,
     MASTERED_FILE,
@@ -10,6 +11,8 @@ from srl.storage import (
     AUDIT_FILE,
 )
 from srl.commands.config import Config
+
+Grid: TypeAlias = list[list[int | str]]
 
 
 def add_subparser(subparsers):
@@ -69,12 +72,43 @@ def render_activity(
             month = 12
             year -= 1
 
-    grids: list[list[list[int | str]]] = []
+    grids: list[Grid] = []
     for y, m in reversed(months_list):
         month_start = date(y, m, 1)
         grid = build_month(month_start, counts, today)
         grids.append(grid)
 
+    rows = wrap_rows(console.width, grids)
+
+    for index, grid_row in enumerate(rows):
+        if index:
+            console.print()
+        console.print(build_table(grid_row, colors))
+
+
+def wrap_rows(max_width: int, grids: list[Grid]) -> list[list[Grid]]:
+    row: list[Grid] = []
+    rows: list[list[Grid]] = []
+    row_width = len("Sun ")
+
+    for grid in grids:
+        # Two characters per week plus one trailing gap
+        grid_width = 2 * (len(grid[0]) - 1) + 1
+        if row and grid_width + row_width > max_width:
+            rows.append(row)
+            row = []
+            row_width = len("Sun ")
+
+        row.append(grid)
+        row_width += grid_width
+
+    if row:
+        rows.append(row)
+
+    return rows
+
+
+def build_table(grids: list[Grid], colors: dict[int, str]) -> Table:
     days_of_week = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     default_color = list(colors.values())[-1]
     table = Table(
@@ -98,7 +132,7 @@ def render_activity(
             )
         table.add_row(*rendered_row)
 
-    console.print(table)
+    return table
 
 
 def key(d: date) -> str:
@@ -148,8 +182,8 @@ def build_month(
     month_start: date,
     counts: Counter[str],
     today: date,
-) -> list[list[int | str]]:
-    grid: list[list[int | str]] = [[" " for _ in range(8)] for _ in range(7)]
+) -> Grid:
+    grid: Grid = [[" " for _ in range(8)] for _ in range(7)]
 
     current_month = month_start.month
     day = month_start
@@ -166,7 +200,7 @@ def build_month(
     return grid
 
 
-def remove_empty_columns(grid) -> list[list[int | str]]:
+def remove_empty_columns(grid) -> Grid:
     non_empty_cols = []
     num_cols = len(grid[0]) if grid else 0
     for col_idx in range(num_cols):

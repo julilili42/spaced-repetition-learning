@@ -83,6 +83,12 @@ def test_get_all_date_counts(
     assert "2024-06-07" not in result  # audit fail, should not be included
 
 
+def test_wrap_rows():
+    grids = [[[index] * 6 + [" "] for _ in range(7)] for index in range(5)]
+    rows = calendar.wrap_rows(30, grids)
+    assert rows == [grids[:2], grids[2:4], grids[4:]]
+
+
 def test_get_earliest_date_empty():
     assert calendar.get_earliest_date([]) is None
 
